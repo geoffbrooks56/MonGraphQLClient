@@ -1,139 +1,454 @@
-﻿using System.Text.Json.Nodes;
+﻿using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace MonGraphQLClient;
 
-public class Agent
+public static class Agent
 {
-    public string APIUrl { get; set; }
-    public string APISecret { get; set; }
+	static string APIUrl { get; set; }
+	static string APISecret { get; set; }
+	static string MasterBoardId { get; set; }
 
-    public List<RequestHeader> RequestHeaders { get; set; }
+	static Agent()
+	{
+		APISecret = Environment.GetEnvironmentVariable("MondayAPIToken", EnvironmentVariableTarget.Process);
+		APIUrl = Environment.GetEnvironmentVariable("MondayURL", EnvironmentVariableTarget.Process);
+		MasterBoardId = Environment.GetEnvironmentVariable("MondayBoardId", EnvironmentVariableTarget.Process);
+	}
 
-    public Agent(){ }
+	#region PUBLIC ITEM EDITS
 
-    public Agent(string apiUrl, string apiKey)
-    {
-        APIUrl = apiUrl;
-        APISecret = apiKey;
-    }
+	public static async Task<string> AddMonItem(MonItem groupItem, ILogger logger)
+	{
+		string newid = "";
+		string query = "";
+		string changequery = "";
 
-    public async Task<JsonNode> GetResultAsync(Query query)
-    {
-        ArgumentNullException.ThrowIfNull(nameof(query));
+		try
+		{
+			DateTime lastActivityDate = Convert.ToDateTime(groupItem.LastActivityDate);
+			string lastDate = lastActivityDate.ToString("yyyy-MM-dd");
 
-        string queryString = ConstructQueryString(query);
+			DateTime followupDate = Convert.ToDateTime(groupItem.FollowUpDate);
+			if (followupDate == DateTime.MinValue)
+			{
+				followupDate = DateTime.Now.AddDays(14);
+			}
+			string followDate = followupDate.ToString("yyyy-MM-dd");
 
-        JsonNode node = null;
+			query = @"{""query"": ""mutation {create_item(board_id: " + groupItem.BoardId +
+										@", group_id: \""" + groupItem.GroupId + @"\"" item_name: \""" + groupItem.Name + @"\"" ) { id} }"" }";
 
-        try
-        {
-            using var client = new HttpClient { BaseAddress = new Uri(APIUrl) };
-            using HttpRequestMessage request = new();
-            request.Method = HttpMethod.Post;
+			JsonNode node = await GetResponseContent(query, logger);
 
-            foreach (var header in RequestHeaders) 
-            {
-                request.Headers.Add(header.Name, header.Value);
-            }
+			newid = node["data"]["create_item"]["id"].ToString();
 
-            request.Content = new StringContent(queryString, Encoding.UTF8, "application/json");
-            HttpResponseMessage response = await client.SendAsync(request);
-            node = JsonNode.Parse(await response.Content.ReadAsStringAsync());
-        }
-        catch (Exception ex)
-        {    
-            Console.Write(ex.ToString());
-            throw;
-        }
+			string changequery = @"{""query"": ""mutation {change_simple_column_value (item_id: " + newid + @", board_id: " + groupItem.BoardId + @", column_id: \""account_number\"", value: \""" + groupItem.AccountNumber + @"\"" ) { id} }"" }";
 
-        return node;
-    }
-    
-    public class RequestHeader
-    {
-        public RequestHeader() {}
+			await GetResponseContent(changequery, logger);
 
-        public RequestHeader(string name, string value)
-        {
-            Name = name; 
-            Value = value;
-        }
+			changequery = @"{""query"": ""mutation {change_simple_column_value (item_id: " + newid + @", board_id: " + groupItem.BoardId + @", column_id: \""text9\"", value: \""" + groupItem.MainContact + @"\"" ) { id} }"" }";
 
-        public string Name { get; set; }
+			await GetResponseContent(changequery, logger);
 
-        public string Value { get; set; }
-    }
+			changequery = @"{""query"": ""mutation {change_simple_column_value (item_id: " + newid + @", board_id: " + groupItem.BoardId + @", column_id: \""text__1\"", value: \""" + groupItem.Email + @"\"" ) { id} }"" }";
 
-    static string ConstructQueryString(Query queryObj)
-    {
-        StringBuilder sb = new ();
+			await GetResponseContent(changequery, logger);
 
-        string queryString = string.Empty;
+			changequery = @"{""query"": ""mutation {change_simple_column_value (item_id: " + newid + @", board_id: " + groupItem.BoardId + @", column_id: \""text0__1\"", value: \""" + groupItem.PhoneNumber + @"\"" ) { id} }"" }";
 
-        if (!string.IsNullOrEmpty(queryObj.Prefix))
-        {
-            sb.Append(queryObj.Prefix);
-        }
+			await GetResponseContent(changequery, logger);
 
-        if (!string.IsNullOrEmpty(queryObj.OperationName))
-        {
-            sb.Append(queryObj.OperationName);
-        }
+			changequery = @"{""query"": ""mutation {change_simple_column_value (item_id: " + newid + @", board_id: " + groupItem.BoardId + @", column_id: \""date7\"", value: \""" + lastDate + @"\"" ) { id} }"" }";
 
-        if (!string.IsNullOrEmpty(queryObj.Body))
-        {
-            sb.Append(queryObj.Body);
-        }
+			await GetResponseContent(changequery, logger);
 
-        bool hasVars = (queryObj.Variables.Count > 0);
+			changequery = @"{""query"": ""mutation {change_simple_column_value (item_id: " + newid + @", board_id: " + groupItem.BoardId + @", column_id: \""date72\"", value: \""" + followDate + @"\"" ) { id} }"" }";
 
-        if (hasVars) sb.Append('{');
+		}
+		catch (Exception ex)
+		{
+			string msg = $"AddMonItem: query: {query}, changequery: {changequery}";
+			logger.LogError(ex, msg);
+			throw new MonGraphQLClientException(ex, msg);
+		}
 
-        foreach (var qvar in  queryObj.Variables)
-        {
-            bool hasEsc = !string.IsNullOrEmpty(qvar.EscapeCharacter);
+		return newid;
+	}
 
-            if (hasEsc)
-            {
-                if (hasEsc) sb.Append(qvar.EscapeCharacter);
-                sb.Append(qvar.Name);
-                if (hasEsc) sb.Append(qvar.EscapeCharacter);
-                if (hasEsc) sb.Append(qvar.EscapeCharacter);
-                sb.Append(qvar.Value);
-                if (hasEsc) sb.Append(qvar.EscapeCharacter);
-                sb.Append(':');
-            }        
-        }
+	public static async Task<bool> UpdateMonItem(MonItem groupItem, ILogger logger)
+	{
 
-        if (hasVars) sb.Append('}');
+		string newid = groupItem.ItemId;
+		string changequery = "";
 
-        if (!string.IsNullOrEmpty(queryObj.Suffix))
-        {
-            sb.Append(queryObj.Suffix);
-        }
+		try
+		{
+			DateTime lastActivityDate = Convert.ToDateTime(groupItem.LastActivityDate);
+			string lastDate = lastActivityDate.ToString("yyyy-MM-dd");
 
-        return queryString;
-    }
+			DateTime followupDate = Convert.ToDateTime(groupItem.FollowUpDate);
+			if (followupDate == DateTime.MinValue)
+			{
+				followupDate = DateTime.Now.AddDays(14);
+			}
+			string followDate = followupDate.ToString("yyyy-MM-dd");
 
-    public class Query
-    {
-        public Query() 
-        {
-            Variables = [];
-        }
+			changequery = @"{""query"": ""mutation {change_simple_column_value (item_id: " + newid + @", board_id: " + groupItem.BoardId + @", column_id: \""account_number\"", value: \""" + groupItem.AccountNumber + @"\"" ) { id} }"" }";
 
-        public string Prefix { get; set; }
-        public string Suffix { get; set; }
-        public string Body { get; set; }
-        public List<Variable> Variables { get; set; }
-        public string OperationName { get; set; }   
-    }
+			await GetResponseContent(changequery, logger);
 
-    public class Variable
-    {
-        public string Name { get; set; }
-        public string Value { get; set; }
-        public string Type { get; set; }
-        public string EscapeCharacter { get; set; }
-    }
+			changequery = @"{""query"": ""mutation {change_simple_column_value (item_id: " + newid + @", board_id: " + groupItem.BoardId + @", column_id: \""text9\"", value: \""" + groupItem.MainContact + @"\"" ) { id} }"" }";
+
+			await GetResponseContent(changequery, logger);
+
+			changequery = @"{""query"": ""mutation {change_simple_column_value (item_id: " + newid + @", board_id: " + groupItem.BoardId + @", column_id: \""text__1\"", value: \""" + groupItem.Email + @"\"" ) { id} }"" }";
+
+			await GetResponseContent(changequery, logger);
+
+			changequery = @"{""query"": ""mutation {change_simple_column_value (item_id: " + newid + @", board_id: " + groupItem.BoardId + @", column_id: \""text0__1\"", value: \""" + groupItem.PhoneNumber + @"\"" ) { id} }"" }";
+
+			await GetResponseContent(changequery, logger);
+
+			changequery = @"{""query"": ""mutation {change_simple_column_value (item_id: " + newid + @", board_id: " + groupItem.BoardId + @", column_id: \""date7\"", value: \""" + lastDate + @"\"" ) { id} }"" }";
+
+			await GetResponseContent(changequery, logger);
+
+			changequery = @"{""query"": ""mutation {change_simple_column_value (item_id: " + newid + @", board_id: " + groupItem.BoardId + @", column_id: \""date72\"", value: \""" + followDate + @"\"" ) { id} }"" }";
+
+			await GetResponseContent(changequery, logger);
+
+		}
+		catch (Exception ex)
+		{
+			string msg = $"UpdateMonItem: changequery: {changequery}";
+			logger.LogError(ex, msg);
+			throw new MonGraphQLClientException(ex, msg);
+		}
+
+		return true;
+	}
+
+	public static async Task<string> MoveMonItem(string itemId, string newGroupId, ILogger logger)
+	{
+		string query = "";
+		string newid = "";
+
+		try
+		{
+			query = @"{""query"": ""mutation {move_item_to_group(item_id: " + itemId + @", group_id: \""" + newGroupId + @"\""){id}}""}";
+
+			JsonNode node = await GetResponseContent(query, logger);
+
+			newid = node["data"]["move_item_to_group"]["id"].ToString();
+		}
+
+		catch (Exception ex)
+		{
+			string msg = $"MoveMonItem: query: {query}";
+			logger.LogError(ex, msg);
+			throw new MonGraphQLClientException(ex, msg);
+		}
+
+		return newid;
+	}
+
+	#endregion
+
+	#region PUBLIC QUERY BOARDS AND GROUPS
+
+	public static async Task<List<MonGroup>> QueryBoardGroups(MonBoard board, ILogger logger)
+	{
+		string query = string.Empty;
+
+		logger.LogTrace("in QueryBoardGroups");
+
+		try
+		{
+
+			var queryObject = new
+			{
+				query = @"query{
+                        boards (ids: " + board.BoardId + @"){ 
+                            groups{
+                                id
+                                title
+                            }
+                        }
+                      }"
+			};
+
+			query = JsonSerializer.Serialize(queryObject);
+		}
+		catch (Exception ex)
+		{
+			logger.LogError(ex, "query: {query}", query);
+			throw;
+		}
+
+		return await FetchBoardGroups(query, board, logger);
+	}
+
+	public static async Task<List<MonItem>> QueryBoardGroupItems(MonGroup group, ILogger logger)
+	{
+		string query = string.Empty;
+
+		logger.LogTrace("in QueryBoardGroupItems");
+
+		try
+		{
+			var queryObject = new
+			{
+				query = @"query{
+                        boards (ids: " + group.BoardId + @"){
+                            groups (ids: """ + group.GroupId + @"""){
+                                items_page (limit: 100){       
+                                    cursor
+                                    items{
+                                        id 
+                                        name 
+                                        column_values{
+                                            id 
+                                            type
+                                            text 
+                                            column{
+                                                title                
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }"
+			};
+
+			query = JsonSerializer.Serialize(queryObject);
+
+		}
+		catch (Exception ex)
+		{
+			logger.LogError(ex, "query: {query}", query);
+			throw;
+		}
+
+		return await FetchBoardGroupItems(query, group, logger);
+	}
+
+	#endregion
+
+	#region INTERNALS
+	internal static List<RequestHeader> RequestHeaders { get; set; }
+
+	internal static async Task<JsonNode> GetResultAsync(Query query)
+	{
+		ArgumentNullException.ThrowIfNull(nameof(query));
+
+		string queryString = ConstructQueryString(query);
+
+		JsonNode node = null;
+
+		try
+		{
+			using var client = new HttpClient { BaseAddress = new Uri(APIUrl) };
+			using HttpRequestMessage request = new();
+			request.Method = HttpMethod.Post;
+
+			foreach (var header in RequestHeaders)
+			{
+				request.Headers.Add(header.Name, header.Value);
+			}
+
+			request.Content = new StringContent(queryString, Encoding.UTF8, "application/json");
+			HttpResponseMessage response = await client.SendAsync(request);
+			node = JsonNode.Parse(await response.Content.ReadAsStringAsync());
+		}
+		catch (Exception ex)
+		{
+			Console.Write(ex.ToString());
+			throw;
+		}
+
+		return node;
+	}
+
+	internal static async Task<List<MonGroup>> FetchBoardGroups(string query, MonBoard board, ILogger logger)
+	{
+		List<MonGroup> groups = [];
+
+		logger.LogTrace("FetchBoardGroups query: {query}", query);
+
+		try
+		{
+			JsonNode groupsNode = await GetResponseContent(query, logger);
+			JsonArray groupsArray = groupsNode["data"]["boards"][0]["groups"].AsArray();
+
+			foreach (var groupItem in groupsArray)
+			{
+				MonGroup group = new()
+				{
+					BoardId = board.BoardId,
+					GroupId = groupItem["id"].ToString(),
+					Title = groupItem["title"].ToString()
+				};
+				groups.Add(group);
+			}
+		}
+		catch (Exception ex)
+		{
+			string msg = $"FetchBoardGroups: query: {query}";
+			logger.LogError(ex, msg);
+			throw new MonGraphQLClientException(ex, msg);
+		}
+
+		return groups;
+	}
+
+	internal static async Task<List<MonItem>> FetchBoardGroupItems(string query, MonGroup group, ILogger logger)
+	{
+		List<MonItem> groupItems = [];
+
+		try
+		{
+			logger.LogTrace("FetchBoardGroupItems query: {query}", query);
+
+			JsonNode node = await GetResponseContent(query, logger);
+
+			string groupjson = node["data"]["boards"][0]["groups"].ToJsonString();
+			if (groupjson != "[]")
+			{
+				JsonNode itemspagenode = JsonNode.Parse(groupjson);
+				JsonArray itemsArray = itemspagenode[0].AsObject()["items_page"].AsObject()["items"].AsArray();
+
+				foreach (var item in itemsArray)
+				{
+					MonItem mgItem = new()
+					{
+						ItemId = item["id"].ToString(),
+						BoardId = group.BoardId,
+						GroupId = group.GroupId,
+						GroupTitle = group.Title,
+						Name = item["name"].ToString()
+					};
+
+					JsonArray columnValues = item["column_values"].AsArray();
+					foreach (var columnValue in columnValues)
+					{
+						switch (columnValue["id"].ToString())
+						{
+							case "account_number":
+								mgItem.AccountNumber = columnValue["text"].ToString();
+								break;
+							case "text9":
+								mgItem.MainContact = columnValue["text"].ToString();
+								break;
+							case "date7":
+								mgItem.LastActivityDate = columnValue["text"].ToString();
+								break;
+							case "date72":
+								mgItem.FollowUpDate = columnValue["text"].ToString();
+								break;
+							case "text__1":
+								mgItem.Email = columnValue["text"].ToString();
+								break;
+							case "text0__1":
+								mgItem.PhoneNumber = columnValue["text"].ToString();
+								break;
+						}
+					}
+
+					groupItems.Add(mgItem);
+				}
+			}
+		}
+		catch (Exception ex)
+		{
+			string msg = $"FetchBoardGroupItems: query: {query}";
+			logger.LogError(ex, msg);
+			throw new MonGraphQLClientException(ex, msg);
+		}
+
+		return groupItems;
+	}
+
+	#endregion
+
+	#region PRIVATES
+
+	static string ConstructQueryString(Query queryObj)
+	{
+		StringBuilder sb = new();
+
+		string queryString = string.Empty;
+
+		if (!string.IsNullOrEmpty(queryObj.Prefix))
+		{
+			sb.Append(queryObj.Prefix);
+		}
+
+		if (!string.IsNullOrEmpty(queryObj.OperationName))
+		{
+			sb.Append(queryObj.OperationName);
+		}
+
+		if (!string.IsNullOrEmpty(queryObj.Body))
+		{
+			sb.Append(queryObj.Body);
+		}
+
+		bool hasVars = (queryObj.Items.Count > 0);
+
+		if (hasVars) sb.Append('{');
+
+		foreach (var qvar in queryObj.Items)
+		{
+			bool hasEsc = !string.IsNullOrEmpty(qvar.EscapeCharacter);
+
+			if (hasEsc)
+			{
+				if (hasEsc) sb.Append(qvar.EscapeCharacter);
+				sb.Append(qvar.Name);
+				if (hasEsc) sb.Append(qvar.EscapeCharacter);
+				if (hasEsc) sb.Append(qvar.EscapeCharacter);
+				sb.Append(qvar.Value);
+				if (hasEsc) sb.Append(qvar.EscapeCharacter);
+				sb.Append(':');
+			}
+		}
+
+		if (hasVars) sb.Append('}');
+
+		if (!string.IsNullOrEmpty(queryObj.Suffix))
+		{
+			sb.Append(queryObj.Suffix);
+		}
+
+		return queryString;
+	}
+
+	static async Task<JsonNode> GetResponseContent(string query, ILogger logger)
+	{
+		JsonNode node = null;
+
+		try
+		{
+			using var client = new HttpClient { BaseAddress = new Uri(APIUrl) };
+			using HttpRequestMessage request = new();
+			request.Method = HttpMethod.Post;
+			request.Headers.Add("Authorization", APISecret);
+			request.Headers.Add("API_Version", "2023-10");
+			request.Content = new StringContent(query, Encoding.UTF8, "application/json");
+			HttpResponseMessage response = await client.SendAsync(request);
+			node = JsonNode.Parse(await response.Content.ReadAsStringAsync());
+		}
+		catch (Exception ex)
+		{
+			string msg = $"GetResponseContent: query: {query}";
+			logger.LogError(ex, msg);
+			throw new MonGraphQLClientException(ex, msg);
+		}
+
+		return node;
+	}
+	
+	#endregion
 }

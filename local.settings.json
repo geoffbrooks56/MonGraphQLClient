@@ -1,0 +1,21 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobs.MergePrintavoUpdatesToMonday.Disabled": true,
+    "MondayAPIToken": "eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjM0NzgzNjU3NiwiYWFpIjoxMSwidWlkIjoyNzU3ODkxNiwiaWFkIjoiMjAyNC0wNC0xNlQxNjoxODowMC4wMDBaIiwicGVyIjoibWU6d3JpdGUiLCJhY3RpZCI6NzA2MDE1NywicmduIjoidXNlMSJ9.m8BwUEjBogNns4QG2_bV-Wg1dNm9yHeP-uDxwg42yxs",
+    "MondayURL": "https://api.monday.com/v2",
+    "BlobStorageAccessKey": "dkW8UIndYoV7eYd6mq5vWZSPOCiG/+XAlW9HLGTVjZv+z6nCy1tQVlbp4sAnHBTuMQZCf7s9ElG9zs+BJUNMbA==",
+    "BlobStorageAccountName": "novusclothingcompany",
+    "AzureWebJobsStorage": "DefaultEndpointsProtocol=https;AccountName=novusclothingcompany;AccountKey=dkW8UIndYoV7eYd6mq5vWZSPOCiG/+XAlW9HLGTVjZv+z6nCy1tQVlbp4sAnHBTuMQZCf7s9ElG9zs+BJUNMbA==;EndpointSuffix=core.windows.net",
+    "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
+    "PrintavoAPIURL": "https://www.printavo.com/api/v2",
+    "PrintavoAPIToken": "gaz5eI8KlBMTNMZTzP1GcA",
+    "PrintavoEmail": "geoff@novusclothingcompany.com",
+    "WEBSITE_TIME_ZONE": "Eastern Standard Time"
+  },
+  "Host": {
+    "LocalHttpPort": 7110,
+    "CORS": "*",
+    "CORSCredentials": false
+  }
+}
