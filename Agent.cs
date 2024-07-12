@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using Microsoft.Extensions.Logging;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 
 namespace MonGraphQLClient;
@@ -43,57 +44,6 @@ public static class Agent
 
 			newid = node["data"]["create_item"]["id"].ToString();
 
-			string changequery = @"{""query"": ""mutation {change_simple_column_value (item_id: " + newid + @", board_id: " + groupItem.BoardId + @", column_id: \""account_number\"", value: \""" + groupItem.AccountNumber + @"\"" ) { id} }"" }";
-
-			await GetResponseContent(changequery, logger);
-
-			changequery = @"{""query"": ""mutation {change_simple_column_value (item_id: " + newid + @", board_id: " + groupItem.BoardId + @", column_id: \""text9\"", value: \""" + groupItem.MainContact + @"\"" ) { id} }"" }";
-
-			await GetResponseContent(changequery, logger);
-
-			changequery = @"{""query"": ""mutation {change_simple_column_value (item_id: " + newid + @", board_id: " + groupItem.BoardId + @", column_id: \""text__1\"", value: \""" + groupItem.Email + @"\"" ) { id} }"" }";
-
-			await GetResponseContent(changequery, logger);
-
-			changequery = @"{""query"": ""mutation {change_simple_column_value (item_id: " + newid + @", board_id: " + groupItem.BoardId + @", column_id: \""text0__1\"", value: \""" + groupItem.PhoneNumber + @"\"" ) { id} }"" }";
-
-			await GetResponseContent(changequery, logger);
-
-			changequery = @"{""query"": ""mutation {change_simple_column_value (item_id: " + newid + @", board_id: " + groupItem.BoardId + @", column_id: \""date7\"", value: \""" + lastDate + @"\"" ) { id} }"" }";
-
-			await GetResponseContent(changequery, logger);
-
-			changequery = @"{""query"": ""mutation {change_simple_column_value (item_id: " + newid + @", board_id: " + groupItem.BoardId + @", column_id: \""date72\"", value: \""" + followDate + @"\"" ) { id} }"" }";
-
-		}
-		catch (Exception ex)
-		{
-			string msg = $"AddMonItem: query: {query}, changequery: {changequery}";
-			logger.LogError(ex, msg);
-			throw new MonGraphQLClientException(ex, msg);
-		}
-
-		return newid;
-	}
-
-	public static async Task<bool> UpdateMonItem(MonItem groupItem, ILogger logger)
-	{
-
-		string newid = groupItem.ItemId;
-		string changequery = "";
-
-		try
-		{
-			DateTime lastActivityDate = Convert.ToDateTime(groupItem.LastActivityDate);
-			string lastDate = lastActivityDate.ToString("yyyy-MM-dd");
-
-			DateTime followupDate = Convert.ToDateTime(groupItem.FollowUpDate);
-			if (followupDate == DateTime.MinValue)
-			{
-				followupDate = DateTime.Now.AddDays(14);
-			}
-			string followDate = followupDate.ToString("yyyy-MM-dd");
-
 			changequery = @"{""query"": ""mutation {change_simple_column_value (item_id: " + newid + @", board_id: " + groupItem.BoardId + @", column_id: \""account_number\"", value: \""" + groupItem.AccountNumber + @"\"" ) { id} }"" }";
 
 			await GetResponseContent(changequery, logger);
@@ -116,14 +66,63 @@ public static class Agent
 
 			changequery = @"{""query"": ""mutation {change_simple_column_value (item_id: " + newid + @", board_id: " + groupItem.BoardId + @", column_id: \""date72\"", value: \""" + followDate + @"\"" ) { id} }"" }";
 
-			await GetResponseContent(changequery, logger);
+		}
+		catch (Exception ex)
+		{
+			logger.LogError(ex, "query: {query}", query);
+			throw new MonGraphQLClientException(ex, $"query: {query}");
+		}
+
+		return newid;
+	}
+
+	public static async Task<bool> UpdateMonItem(MonItem groupItem, ILogger logger)
+	{
+
+		string newid = groupItem.ItemId;
+		string query = "";
+
+		try
+		{
+			DateTime lastActivityDate = Convert.ToDateTime(groupItem.LastActivityDate);
+			string lastDate = lastActivityDate.ToString("yyyy-MM-dd");
+
+			DateTime followupDate = Convert.ToDateTime(groupItem.FollowUpDate);
+			if (followupDate == DateTime.MinValue)
+			{
+				followupDate = DateTime.Now.AddDays(14);
+			}
+			string followDate = followupDate.ToString("yyyy-MM-dd");
+
+			query = @"{""query"": ""mutation {change_simple_column_value (item_id: " + newid + @", board_id: " + groupItem.BoardId + @", column_id: \""account_number\"", value: \""" + groupItem.AccountNumber + @"\"" ) { id} }"" }";
+
+			await GetResponseContent(query, logger);
+
+			query = @"{""query"": ""mutation {change_simple_column_value (item_id: " + newid + @", board_id: " + groupItem.BoardId + @", column_id: \""text9\"", value: \""" + groupItem.MainContact + @"\"" ) { id} }"" }";
+
+			await GetResponseContent(query, logger);
+
+			query = @"{""query"": ""mutation {change_simple_column_value (item_id: " + newid + @", board_id: " + groupItem.BoardId + @", column_id: \""text__1\"", value: \""" + groupItem.Email + @"\"" ) { id} }"" }";
+
+			await GetResponseContent(query, logger);
+
+			query = @"{""query"": ""mutation {change_simple_column_value (item_id: " + newid + @", board_id: " + groupItem.BoardId + @", column_id: \""text0__1\"", value: \""" + groupItem.PhoneNumber + @"\"" ) { id} }"" }";
+
+			await GetResponseContent(query, logger);
+
+			query = @"{""query"": ""mutation {change_simple_column_value (item_id: " + newid + @", board_id: " + groupItem.BoardId + @", column_id: \""date7\"", value: \""" + lastDate + @"\"" ) { id} }"" }";
+
+			await GetResponseContent(query, logger);
+
+			query = @"{""query"": ""mutation {change_simple_column_value (item_id: " + newid + @", board_id: " + groupItem.BoardId + @", column_id: \""date72\"", value: \""" + followDate + @"\"" ) { id} }"" }";
+
+			await GetResponseContent(query, logger);
 
 		}
 		catch (Exception ex)
 		{
-			string msg = $"UpdateMonItem: changequery: {changequery}";
-			logger.LogError(ex, msg);
-			throw new MonGraphQLClientException(ex, msg);
+			logger.LogError(ex, "query: {query}", query);
+			throw new MonGraphQLClientException(ex, $"query: {query}");
 		}
 
 		return true;
@@ -145,9 +144,8 @@ public static class Agent
 
 		catch (Exception ex)
 		{
-			string msg = $"MoveMonItem: query: {query}";
-			logger.LogError(ex, msg);
-			throw new MonGraphQLClientException(ex, msg);
+			logger.LogError(ex, "query: {query}", query);
+			throw new MonGraphQLClientException(ex, $"query: {query}");
 		}
 
 		return newid;
@@ -183,10 +181,10 @@ public static class Agent
 		catch (Exception ex)
 		{
 			logger.LogError(ex, "query: {query}", query);
-			throw;
+			throw new MonGraphQLClientException(ex, $"query: {query}");
 		}
 
-		return await FetchBoardGroups(query, board, logger);
+		return await GetGroupsForBoard(query, board, logger);
 	}
 
 	public static async Task<List<MonItem>> QueryBoardGroupItems(MonGroup group, ILogger logger)
@@ -228,10 +226,10 @@ public static class Agent
 		catch (Exception ex)
 		{
 			logger.LogError(ex, "query: {query}", query);
-			throw;
+			throw new MonGraphQLClientException(ex, $"query: {query}");
 		}
 
-		return await FetchBoardGroupItems(query, group, logger);
+		return await GetItemsForBoard(query, group, logger);
 	}
 
 	#endregion
@@ -239,7 +237,7 @@ public static class Agent
 	#region INTERNALS
 	internal static List<RequestHeader> RequestHeaders { get; set; }
 
-	internal static async Task<JsonNode> GetResultAsync(Query query)
+	internal static async Task<JsonNode> GetResultAsync(Query query, ILogger logger)
 	{
 		ArgumentNullException.ThrowIfNull(nameof(query));
 
@@ -264,18 +262,18 @@ public static class Agent
 		}
 		catch (Exception ex)
 		{
-			Console.Write(ex.ToString());
-			throw;
+			logger.LogError(ex, "query: {query}", query);
+			throw new MonGraphQLClientException(ex, $"query: {query}");
 		}
 
 		return node;
 	}
 
-	internal static async Task<List<MonGroup>> FetchBoardGroups(string query, MonBoard board, ILogger logger)
+	internal static async Task<List<MonGroup>> GetGroupsForBoard(string query, MonBoard board, ILogger logger)
 	{
 		List<MonGroup> groups = [];
 
-		logger.LogTrace("FetchBoardGroups query: {query}", query);
+		logger.LogTrace("GetGroupsForBoard query: {query}", query);
 
 		try
 		{
@@ -294,22 +292,21 @@ public static class Agent
 			}
 		}
 		catch (Exception ex)
-		{
-			string msg = $"FetchBoardGroups: query: {query}";
-			logger.LogError(ex, msg);
-			throw new MonGraphQLClientException(ex, msg);
+		{			
+			logger.LogError(ex, "query: {query}", query);
+			throw new MonGraphQLClientException(ex, $"query: {query}");
 		}
 
 		return groups;
 	}
 
-	internal static async Task<List<MonItem>> FetchBoardGroupItems(string query, MonGroup group, ILogger logger)
+	internal static async Task<List<MonItem>> GetItemsForBoard(string query, MonGroup group, ILogger logger)
 	{
 		List<MonItem> groupItems = [];
 
 		try
 		{
-			logger.LogTrace("FetchBoardGroupItems query: {query}", query);
+			logger.LogTrace("GetItemsForBoard query: {query}", query);
 
 			JsonNode node = await GetResponseContent(query, logger);
 
@@ -362,9 +359,8 @@ public static class Agent
 		}
 		catch (Exception ex)
 		{
-			string msg = $"FetchBoardGroupItems: query: {query}";
-			logger.LogError(ex, msg);
-			throw new MonGraphQLClientException(ex, msg);
+			logger.LogError(ex, "query: {query}", query);
+			throw new MonGraphQLClientException(ex, $"query: {query}");
 		}
 
 		return groupItems;
