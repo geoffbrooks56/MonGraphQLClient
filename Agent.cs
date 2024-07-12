@@ -155,7 +155,7 @@ public static class Agent
 
 	#region PUBLIC QUERY BOARDS AND GROUPS
 
-	public static async Task<List<MonGroup>> QueryBoardGroups(MonBoard board, ILogger logger)
+	public static async Task<List<MonGroup>> QueryBoardGroups(string boardId, ILogger logger)
 	{
 		string query = string.Empty;
 
@@ -167,7 +167,7 @@ public static class Agent
 			var queryObject = new
 			{
 				query = @"query{
-                        boards (ids: " + board.BoardId + @"){ 
+                        boards (ids: " + boardId + @"){ 
                             groups{
                                 id
                                 title
@@ -184,7 +184,7 @@ public static class Agent
 			throw new MonGraphQLClientException(ex, $"query: {query}");
 		}
 
-		return await GetGroupsForBoard(query, board, logger);
+		return await GetGroupsForBoard(query, boardId, logger);
 	}
 
 	public static async Task<List<MonItem>> QueryBoardGroupItems(MonGroup group, ILogger logger)
@@ -269,7 +269,7 @@ public static class Agent
 		return node;
 	}
 
-	internal static async Task<List<MonGroup>> GetGroupsForBoard(string query, MonBoard board, ILogger logger)
+	internal static async Task<List<MonGroup>> GetGroupsForBoard(string query, string boardId, ILogger logger)
 	{
 		List<MonGroup> groups = [];
 
@@ -284,7 +284,7 @@ public static class Agent
 			{
 				MonGroup group = new()
 				{
-					BoardId = board.BoardId,
+					BoardId = boardId,
 					GroupId = groupItem["id"].ToString(),
 					Title = groupItem["title"].ToString()
 				};
