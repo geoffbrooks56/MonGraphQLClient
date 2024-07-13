@@ -17,8 +17,6 @@ public static class Agent
 		MasterBoardId = Environment.GetEnvironmentVariable("MondayBoardId", EnvironmentVariableTarget.Process);
 	}
 
-
-
 	#region PUBLIC ITEM ADDS/EDITS
 
 	public static async Task<string> AddMonGroup(MonGroup group, ILogger logger)
@@ -31,7 +29,7 @@ public static class Agent
 			query = @"{""query"": ""mutation {create_group(board_id: " + group.BoardId +
 										@", group_name: \""" + group.Title + @"\"" ) { id} }"" }";
 
-			JsonNode node = await GetResponseContent(query, logger);
+			JsonNode node = await MonService.GetResponseContent(query, logger);
 
 			newid = node["data"]["create_group"]["id"].ToString();
 
@@ -47,16 +45,16 @@ public static class Agent
 
 	public static async Task<bool> DeleteMonGroup(string boardId, string groupId, ILogger logger)
 	{
-		string result = "";
+		bool result;
 		string query = "";
 
 		try
 		{			
-			query = @"{""query"": ""mutation {delete_group(board_id: \""" + boardId + @"\"" group_id: \""" + groupId + @"\"") { id	deleted} } ""}";
+			query = @"{""query"": ""mutation {delete_group(board_id: \""" + boardId + @"\"" , group_id: \""" + groupId + @"\"") { id deleted} } ""}";
 
-			JsonNode node = await GetResponseContent(query, logger);
+			JsonNode node = await MonService.GetResponseContent(query, logger);
 
-			result = node["data"]["delete_group"]["deleted"].ToString();
+			result = (node["data"]["delete_group"]["deleted"].ToString() == "false");
 
 		}
 		catch (Exception ex)
@@ -65,9 +63,10 @@ public static class Agent
 			throw new MonGraphQLClientException(ex, $"query: {query}");
 		}
 
-		return Convert.ToBoolean(result);
+		return result;
 	}
 
+	//-------------------------------------------------------------------------------------------------------
 	public static async Task<string> AddMonItem(MonItem groupItem, ILogger logger)
 	{
 		string newid = "";
@@ -89,29 +88,29 @@ public static class Agent
 			query = @"{""query"": ""mutation {create_item(board_id: " + groupItem.BoardId +
 										@", group_id: \""" + groupItem.GroupId + @"\"" item_name: \""" + groupItem.Name + @"\"" ) { id} }"" }";
 
-			JsonNode node = await GetResponseContent(query, logger);
+			JsonNode node = await MonService.GetResponseContent(query, logger);
 
 			newid = node["data"]["create_item"]["id"].ToString();
 
 			changequery = @"{""query"": ""mutation {change_simple_column_value (item_id: " + newid + @", board_id: " + groupItem.BoardId + @", column_id: \""account_number\"", value: \""" + groupItem.AccountNumber + @"\"" ) { id} }"" }";
 
-			await GetResponseContent(changequery, logger);
+			await MonService.GetResponseContent(changequery, logger);
 
 			changequery = @"{""query"": ""mutation {change_simple_column_value (item_id: " + newid + @", board_id: " + groupItem.BoardId + @", column_id: \""text9\"", value: \""" + groupItem.MainContact + @"\"" ) { id} }"" }";
 
-			await GetResponseContent(changequery, logger);
+			await MonService.GetResponseContent(changequery, logger);
 
 			changequery = @"{""query"": ""mutation {change_simple_column_value (item_id: " + newid + @", board_id: " + groupItem.BoardId + @", column_id: \""text__1\"", value: \""" + groupItem.Email + @"\"" ) { id} }"" }";
 
-			await GetResponseContent(changequery, logger);
+			await MonService.GetResponseContent(changequery, logger);
 
 			changequery = @"{""query"": ""mutation {change_simple_column_value (item_id: " + newid + @", board_id: " + groupItem.BoardId + @", column_id: \""text0__1\"", value: \""" + groupItem.PhoneNumber + @"\"" ) { id} }"" }";
 
-			await GetResponseContent(changequery, logger);
+			await MonService.GetResponseContent(changequery, logger);
 
 			changequery = @"{""query"": ""mutation {change_simple_column_value (item_id: " + newid + @", board_id: " + groupItem.BoardId + @", column_id: \""date7\"", value: \""" + lastDate + @"\"" ) { id} }"" }";
 
-			await GetResponseContent(changequery, logger);
+			await MonService.GetResponseContent(changequery, logger);
 
 			changequery = @"{""query"": ""mutation {change_simple_column_value (item_id: " + newid + @", board_id: " + groupItem.BoardId + @", column_id: \""date72\"", value: \""" + followDate + @"\"" ) { id} }"" }";
 
@@ -145,27 +144,27 @@ public static class Agent
 
 			query = @"{""query"": ""mutation {change_simple_column_value (item_id: " + newid + @", board_id: " + groupItem.BoardId + @", column_id: \""account_number\"", value: \""" + groupItem.AccountNumber + @"\"" ) { id} }"" }";
 
-			await GetResponseContent(query, logger);
+			await MonService.GetResponseContent(query, logger);
 
 			query = @"{""query"": ""mutation {change_simple_column_value (item_id: " + newid + @", board_id: " + groupItem.BoardId + @", column_id: \""text9\"", value: \""" + groupItem.MainContact + @"\"" ) { id} }"" }";
 
-			await GetResponseContent(query, logger);
+			await MonService.GetResponseContent(query, logger);
 
 			query = @"{""query"": ""mutation {change_simple_column_value (item_id: " + newid + @", board_id: " + groupItem.BoardId + @", column_id: \""text__1\"", value: \""" + groupItem.Email + @"\"" ) { id} }"" }";
 
-			await GetResponseContent(query, logger);
+			await MonService.GetResponseContent(query, logger);
 
 			query = @"{""query"": ""mutation {change_simple_column_value (item_id: " + newid + @", board_id: " + groupItem.BoardId + @", column_id: \""text0__1\"", value: \""" + groupItem.PhoneNumber + @"\"" ) { id} }"" }";
 
-			await GetResponseContent(query, logger);
+			await MonService.GetResponseContent(query, logger);
 
 			query = @"{""query"": ""mutation {change_simple_column_value (item_id: " + newid + @", board_id: " + groupItem.BoardId + @", column_id: \""date7\"", value: \""" + lastDate + @"\"" ) { id} }"" }";
 
-			await GetResponseContent(query, logger);
+			await MonService.GetResponseContent(query, logger);
 
 			query = @"{""query"": ""mutation {change_simple_column_value (item_id: " + newid + @", board_id: " + groupItem.BoardId + @", column_id: \""date72\"", value: \""" + followDate + @"\"" ) { id} }"" }";
 
-			await GetResponseContent(query, logger);
+			await MonService.GetResponseContent(query, logger);
 
 		}
 		catch (Exception ex)
@@ -186,7 +185,7 @@ public static class Agent
 		{
 			query = @"{""query"": ""mutation {move_item_to_group(item_id: " + itemId + @", group_id: \""" + newGroupId + @"\""){id}}""}";
 
-			JsonNode node = await GetResponseContent(query, logger);
+			JsonNode node = await MonService.GetResponseContent(query, logger);
 
 			newid = node["data"]["move_item_to_group"]["id"].ToString();
 		}
@@ -286,37 +285,7 @@ public static class Agent
 	#region INTERNALS
 	internal static List<RequestHeader> RequestHeaders { get; set; }
 
-	internal static async Task<JsonNode> GetResultAsync(Query query, ILogger logger)
-	{
-		ArgumentNullException.ThrowIfNull(nameof(query));
-
-		string queryString = ConstructQueryString(query);
-
-		JsonNode node = null;
-
-		try
-		{
-			using var client = new HttpClient { BaseAddress = new Uri(APIUrl) };
-			using HttpRequestMessage request = new();
-			request.Method = HttpMethod.Post;
-
-			foreach (var header in RequestHeaders)
-			{
-				request.Headers.Add(header.Name, header.Value);
-			}
-
-			request.Content = new StringContent(queryString, Encoding.UTF8, "application/json");
-			HttpResponseMessage response = await client.SendAsync(request);
-			node = JsonNode.Parse(await response.Content.ReadAsStringAsync());
-		}
-		catch (Exception ex)
-		{
-			logger.LogError(ex, "query: {query}", query);
-			throw new MonGraphQLClientException(ex, $"query: {query}");
-		}
-
-		return node;
-	}
+	
 
 	internal static async Task<List<MonGroup>> GetGroupsForBoard(string query, string boardId, ILogger logger)
 	{
@@ -326,7 +295,7 @@ public static class Agent
 
 		try
 		{
-			JsonNode groupsNode = await GetResponseContent(query, logger);
+			JsonNode groupsNode = await MonService.GetResponseContent(query, logger);
 			JsonArray groupsArray = groupsNode["data"]["boards"][0]["groups"].AsArray();
 
 			foreach (var groupItem in groupsArray)
@@ -357,7 +326,7 @@ public static class Agent
 		{
 			logger.LogTrace("GetItemsForBoard query: {query}", query);
 
-			JsonNode node = await GetResponseContent(query, logger);
+			JsonNode node = await MonService.GetResponseContent(query, logger);
 
 			string groupjson = node["data"]["boards"][0]["groups"].ToJsonString();
 			if (groupjson != "[]")
@@ -417,83 +386,4 @@ public static class Agent
 
 	#endregion
 
-	#region PRIVATES
-
-	static string ConstructQueryString(Query queryObj)
-	{
-		StringBuilder sb = new();
-
-		string queryString = string.Empty;
-
-		if (!string.IsNullOrEmpty(queryObj.Prefix))
-		{
-			sb.Append(queryObj.Prefix);
-		}
-
-		if (!string.IsNullOrEmpty(queryObj.OperationName))
-		{
-			sb.Append(queryObj.OperationName);
-		}
-
-		if (!string.IsNullOrEmpty(queryObj.Body))
-		{
-			sb.Append(queryObj.Body);
-		}
-
-		bool hasVars = (queryObj.Items.Count > 0);
-
-		if (hasVars) sb.Append('{');
-
-		foreach (var qvar in queryObj.Items)
-		{
-			bool hasEsc = !string.IsNullOrEmpty(qvar.EscapeCharacter);
-
-			if (hasEsc)
-			{
-				if (hasEsc) sb.Append(qvar.EscapeCharacter);
-				sb.Append(qvar.Name);
-				if (hasEsc) sb.Append(qvar.EscapeCharacter);
-				if (hasEsc) sb.Append(qvar.EscapeCharacter);
-				sb.Append(qvar.Value);
-				if (hasEsc) sb.Append(qvar.EscapeCharacter);
-				sb.Append(':');
-			}
-		}
-
-		if (hasVars) sb.Append('}');
-
-		if (!string.IsNullOrEmpty(queryObj.Suffix))
-		{
-			sb.Append(queryObj.Suffix);
-		}
-
-		return queryString;
-	}
-
-	static async Task<JsonNode> GetResponseContent(string query, ILogger logger)
-	{
-		JsonNode node = null;
-
-		try
-		{
-			using var client = new HttpClient { BaseAddress = new Uri(APIUrl) };
-			using HttpRequestMessage request = new();
-			request.Method = HttpMethod.Post;
-			request.Headers.Add("Authorization", APISecret);
-			request.Headers.Add("API_Version", "2023-10");
-			request.Content = new StringContent(query, Encoding.UTF8, "application/json");
-			HttpResponseMessage response = await client.SendAsync(request);
-			node = JsonNode.Parse(await response.Content.ReadAsStringAsync());
-		}
-		catch (Exception ex)
-		{
-			string msg = $"GetResponseContent: query: {query}";
-			logger.LogError(ex, msg);
-			throw new MonGraphQLClientException(ex, msg);
-		}
-
-		return node;
-	}
-	
-	#endregion
 }

@@ -1,8 +1,4 @@
-﻿using static System.Runtime.InteropServices.JavaScript.JSType;
-using System.Threading;
-using System;
-
-namespace MonGraphQLClient;
+﻿namespace MonGraphQLClient;
 
 #region PUBLIC
 public class MonBoard
@@ -61,15 +57,6 @@ public class MonItem
 
 #region INTERNALS
 
-//public class MonGroupConfigItem
-//{
-//    public MonGroupConfigItem() { }
-
-//    public string GroupName { get; set; }
-
-//    public string GroupId { get; set; }
-//}
-
 
 internal class RequestHeader
 {
@@ -96,13 +83,13 @@ internal class Query
 	internal string Prefix { get; set; }
 	internal string Suffix { get; set; }
 	internal string Body { get; set; }
-	internal List<QueryItem> Items { get; set; }
-	internal string OperationName { get; set; }
+	internal List<InputVariables> Items { get; set; }
+	internal string OperationType { get; set; }
 }
 
-internal class QueryItem
+internal class InputVariables
 {
-	internal QueryItem()  { }
+	internal InputVariables()  { }
 	internal string Name { get; set; }
 	internal string Value { get; set; }
 	internal string Type { get; set; }
