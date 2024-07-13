@@ -17,7 +17,56 @@ public static class Agent
 		MasterBoardId = Environment.GetEnvironmentVariable("MondayBoardId", EnvironmentVariableTarget.Process);
 	}
 
-	#region PUBLIC ITEM EDITS
+
+
+	#region PUBLIC ITEM ADDS/EDITS
+
+	public static async Task<string> AddMonGroup(MonGroup group, ILogger logger)
+	{
+		string newid = "";
+		string query = "";
+
+		try
+		{
+			query = @"{""query"": ""mutation {create_group(board_id: " + group.BoardId +
+										@", group_name: \""" + group.Title + @"\"" ) { id} }"" }";
+
+			JsonNode node = await GetResponseContent(query, logger);
+
+			newid = node["data"]["create_group"]["id"].ToString();
+
+		}
+		catch (Exception ex)
+		{
+			logger.LogError(ex, "query: {query}", query);
+			throw new MonGraphQLClientException(ex, $"query: {query}");
+		}
+
+		return newid;
+	}
+
+	public static async Task<bool> DeleteMonGroup(string boardId, string groupId, ILogger logger)
+	{
+		string result = "";
+		string query = "";
+
+		try
+		{			
+			query = @"{""query"": ""mutation {delete_group(board_id: \""" + boardId + @"\"" group_id: \""" + groupId + @"\"") { id	deleted} } ""}";
+
+			JsonNode node = await GetResponseContent(query, logger);
+
+			result = node["data"]["delete_group"]["deleted"].ToString();
+
+		}
+		catch (Exception ex)
+		{
+			logger.LogError(ex, "query: {query}", query);
+			throw new MonGraphQLClientException(ex, $"query: {query}");
+		}
+
+		return Convert.ToBoolean(result);
+	}
 
 	public static async Task<string> AddMonItem(MonItem groupItem, ILogger logger)
 	{
