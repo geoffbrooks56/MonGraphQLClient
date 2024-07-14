@@ -1,57 +1,55 @@
-﻿namespace MonGraphQLClient;
+﻿using Microsoft.Extensions.Primitives;
 
-internal static class QueryBuilder
+namespace MonGraphQLClient;
+
+public static class QueryBuilder
 {
 	static QueryBuilder() {  }
 
-    internal static string Parse(Query queryObj)
+	public static string Parse(Query query)
 	{
 		StringBuilder sb = new();
 
-		string queryString = string.Empty;
+		string qs = string.Empty;
 
-		if (!string.IsNullOrEmpty(queryObj.Prefix))
+		sb.Append("{");
+		sb.Append(@"""query"":");
+		 
+		if (query.OperationType == OperationTypeStrings.Query)
 		{
-			sb.Append(queryObj.Prefix);
+			sb.Append(@"""query ");
+		}
+		else
+		{
+			sb.Append(@"""mutation ");
 		}
 
-		if (!string.IsNullOrEmpty(queryObj.OperationType))
+		if (query.Argument is not null)
 		{
-			sb.Append(queryObj.OperationType);
-		}
+			sb.Append(@$"{query.Argument.Name} ( ");
 
-		if (!string.IsNullOrEmpty(queryObj.Body))
-		{
-			sb.Append(queryObj.Body);
-		}
-
-		bool hasVars = (queryObj.Items.Count > 0);
-
-		if (hasVars) sb.Append('{');
-
-		foreach (var qvar in queryObj.Items)
-		{
-			bool hasEsc = !string.IsNullOrEmpty(qvar.EscapeCharacter);
-
-			if (hasEsc)
+			foreach (var argVar in query.Argument.Variables)
 			{
-				if (hasEsc) sb.Append(qvar.EscapeCharacter);
-				sb.Append(qvar.Name);
-				if (hasEsc) sb.Append(qvar.EscapeCharacter);
-				if (hasEsc) sb.Append(qvar.EscapeCharacter);
-				sb.Append(qvar.Value);
-				if (hasEsc) sb.Append(qvar.EscapeCharacter);
-				sb.Append(':');
+				sb.Append($"{argVar.Name}: ");
+
+				switch (argVar.Type)
+				{
+
+
+				}
 			}
+
+			sb.Append(" )");
 		}
 
-		if (hasVars) sb.Append('}');
-
-		if (!string.IsNullOrEmpty(queryObj.Suffix))
+		/*
 		{
-			sb.Append(queryObj.Suffix);
+			"query": "query {boards (ids: 6422224156) {groups {title id}}}" 
 		}
+		 */
 
-		return queryString;
+		sb.Append(@"""}");
+
+		return qs;
 	}
 }

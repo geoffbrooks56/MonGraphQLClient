@@ -73,28 +73,58 @@ internal class RequestHeader
 	internal string Value { get; set; }
 }
 
-internal class Query
+public class Query
 {
-	internal Query()
+	public Query()
 	{
-		Items = [];
+		Inputs = [];
+		Outputs = [];
 	}
 
-	internal string Prefix { get; set; }
-	internal string Suffix { get; set; }
-	internal string Body { get; set; }
-	internal List<InputVariables> Items { get; set; }
-	internal string OperationType { get; set; }
+	public string ObjectType { get; set; }
+	public Argument Argument { get; set; }
+	public string Suffix { get; set; }
+	public string Body { get; set; }
+	public List<Variable> Inputs { get; set; }
+	public List<Variable> Outputs { get; set; }
+	public string OperationType { get; set; }
 }
 
-internal class InputVariables
+public struct OperationTypeStrings
 {
-	internal InputVariables()  { }
-	internal string Name { get; set; }
-	internal string Value { get; set; }
-	internal string Type { get; set; }
-	internal string EscapeCharacter { get; set; }
+	public const string Query = "query";
+	public const string Mutation = "mutation";
 }
+
+public struct VariableTypeStrings
+{
+	public const string String = "String";
+	public const string Int = "Int";
+	public const string Boolean = "Boolean";
+	public const string Object = "OBJECT";
+	public const string ID = "ID";
+	public const string Date = "Date";
+}
+
+public class Variable
+{
+	public Variable()  { }
+	public string Name { get; set; }
+	public string Value { get; set; }
+	public string Type { get; set; }
+	public List<Variable> SubVariables { get; set; }
+}
+
+public class Argument
+{
+	public Argument() 
+	{
+		Variables = [];
+	}
+	public string Name { get; set; }
+	public List<Variable> Variables { get; set; }
+}
+
 
 
 #endregion
